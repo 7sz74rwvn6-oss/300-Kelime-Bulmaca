@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Kelime Bulmaca</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  margin:0; padding:0;
+  font-family: Arial, sans-serif;
+  background:#2c3e50; color:white;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-start;
+  min-height:100vh; text-align:center;
+}
+h1 { font-size:64px; margin:20px 0; }
+#score, #record { font-size:36px; margin:5px; }
+#letters { display:flex; flex-wrap:wrap; justify-content:center; margin:20px auto; max-width:90vw; }
+.letter { width:80px; height:80px; background:#3498db; margin:8px; display:flex; justify-content:center; align-items:center; font-size:48px; border-radius:10px; user-select:none; touch-action: manipulation; cursor:pointer; }
+.letter.used { background:#95a5a6; cursor:not-allowed; }
+#selected { margin:20px 0; font-size:56px; min-height:70px; }
+#checkBtn { font-size:32px; padding:15px 30px; margin:20px; border-radius:12px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<h1>Kelime Bulmaca</h1>
+<div id="score">Skor: 0</div>
+<div id="record">Rekor: 0</div>
+<div id="letters"></div>
+<div id="selected"></div>
+<button id="checkBtn">Kontrol Et</button>
+
+<script>
+// 300 Türkçe kelime
+const words = [
+"ELMA","ARABA","KEDI","BILGISAYAR","FUTBOL","MASA","SANDALYE","KITAP",
+"KALEM","BILIM","OYUN","MUTFAK","BANYO","KAPI","PENCERE","TELEFON",
+"SALON","ODA","BILGISAYARCI","YAZILIM","MOTOR","SEHPA","KUTU","BIRAK",
+"SURAT","YOL","TREN","UCAK","GEMI","DENIZ","DAĞ","NEHIR","CICEK",
+"AGAC","YILDIZ","AY","GUN","HAFTA","AYAK","EL","KULAK","GOZ","BURUN",
+"DOGA","FIRTINA","KUS","KOPEK","KEDI","FIRIN","EKMEK","SU","ICECEK",
+"ARABA","OTOBUS","BISIKLET","MOTOR","YUZME","KOSU","OYUN","SARKI","MUSIC",
+"RESIM","SINIF","OKUL","OGRENCI","OGRETMEN","TARH","MATEMATIK","FIZIK",
+"KIMYA","BILGISAYAR","PROGRAM","KOD","YAZILIM","OYUN","BILIM","SANAT",
+"SEHIR","KASABA","KIMLIK","BILET","HASTANE","ECZANE","MARKET","BAYRAM",
+"TATIL","YAZ","KIŞ","SONBAHAR","ILKBAHAR","SEPET","CANTA","CEKET","ELBISE",
+"AYAKKABI","SANDALET","KALP","DUVAR","RESIM","FOTO","OYUNCAK","BILGISAYAR","TAHTA",
+"KLAVYE","MONITOR","MOUSE","FAN","KULE","BINA","OKYANUS","NEHİR","GORUS","BULUT",
+"YILDIZ","AY","GUN","YEMEK","KAHVALTI","OGLE","AKSAM","YEMEKLİK","TABAĞ",
+"ÇATAL","KAŞIK","BIÇAK","SU","ÇAY","KAHVE","SUT","BAL","PEYNIR",
+"EKMEK","TAVUK","BALIK","ET","SEBZE","MEYVE","DOMATES","SALATALIK",
+"PATATES","SOĞAN","SARIMSAK","HAVUC","ELMA","ARMUT","MUZ","KARPUZ","ÇILEK",
+"ÇAYIR","ORMAN","DAĞ","TEPE","VADI","GÖL","NEHIR","DENIZ","KOY","KUM",
+"TAŞ","KAYA","BILGILIK","TARIM","ÇİFTLIK","INŞAAT","YOL","KÖPRÜ","TREN",
+"OTOBUS","MOTOR","BISIKLET","UCAK","GEMI","ARABA","KAYAK","YÜZME","KOŞU",
+"SPOR","FUTBOL","BASKETBOL","VOLEYBOL","TENIS","GOLF","ATLETIZM","BILIM",
+"MATEMATIK","FIZIK","KIMYA","BIOLOJI","TARIM","TICARET","PAZAR","MAGAZA",
+"MARKET","BAYI","KASAP","FIRIN","ECZANE","HASTANE","OKUL","UNIVERSITE",
+"OGRENCI","OGRETMEN","KÜTÜPHANE","SINIF","KORIDOR","SALON","ODA","BANYO",
+"MUTFAK","GARDROP","KOLTUK","SEHPA","MASA","SANDALYE","LAMBADER","RESIM",
+"FOTO","BILGISAYARCI","PROGRAMCI","MÜZIK","SIKINTI","SEVGI","ARKADAS","AILE",
+"OTURMAK","YEMEK","ICMEK","UYUMAK","KALKMAK","YAZMAK","OKUMAK","DINLEMEK",
+"OYUN","YÜRÜMEK","KOŞMAK","YÜZMEK","OYNAYIŞ","FIRTINA","GÜNEŞ","YAĞMUR",
+"KAR","DOLU","RÜZGAR","HAVA","GÖKYÜZÜ","TOPRAK","DENIZ","NEHİR","ORMAN",
+"DAĞ","TEPE","VADI","GÖL","KUM","TAŞ","KAYA","YILDIZ","AY","GUN","HAFTA",
+"AYAK","EL","KULAK","GOZ","BURUN","DİL","KALP","BÖBREK","CIĞER","MIDE",
+"INCELEME","TARTIŞMA","BILGI","EĞİTİM","SANAT","MÜZİK","RESIM","TARİH",
+"COĞRAFYA","FİZİK","KİMYA","BİYOLOJİ","MATEMATİK","PROGRAM","KOD","YAZILIM"
+];
+
+let score = 0;
+let record = 0;
+let selectedWord = "";
+let selectedLetters = [];
+let correctWord = getRandomWord();
+
+const lettersDiv = document.getElementById("letters");
+const selectedDiv = document.getElementById("selected");
+const scoreDiv = document.getElementById("score");
+const recordDiv = document.getElementById("record");
+const checkBtn = document.getElementById("checkBtn");
+
+function getRandomWord() {
+  return words[Math.floor(Math.random()*words.length)];
+}
+
+function createLetters() {
+  lettersDiv.innerHTML="";
+  selectedLetters=[];
+  selectedWord="";
+  selectedDiv.innerText="";
+  const shuffled = correctWord.split("").sort(()=>Math.random()-0.5);
+  shuffled.forEach((letter,index)=>{
+    const div = document.createElement("div");
+    div.className="letter";
+    div.innerText=letter;
+    div.dataset.index=index;
+    div.addEventListener("click", ()=>{
+      if(div.classList.contains("used")) return;
+      selectedWord += letter;
+      selectedLetters.push(div.dataset.index);
+      div.classList.add("used");
+      selectedDiv.innerText = selectedWord;
+    });
+    lettersDiv.appendChild(div);
+  });
+}
+
+checkBtn.addEventListener("click", ()=>{
+  if(selectedWord === correctWord){
+    score++;
+    if(score > record) record = score;
+    alert("Doğru!");
+  } else {
+    alert("Yanlış! Doğru kelime: "+correctWord);
+    score = 0;
+  }
+  scoreDiv.innerText = "Skor: " + score;
+  recordDiv.innerText = "Rekor: " + record;
+  correctWord = getRandomWord();
+  createLetters();
+});
+
+createLetters();
+</script>
+
+</body>
+</html>
